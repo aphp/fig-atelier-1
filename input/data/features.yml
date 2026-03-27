@@ -1,0 +1,7 @@
+---
+disable_autonumbering: true
+feedback:
+  - active: true
+    dashboard:
+      label: New Issue
+      url: https://gitlab.eds.aphp.fr/ID/ed/dm/support/-/issues/new

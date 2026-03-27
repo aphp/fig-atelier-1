@@ -1,0 +1,73 @@
+# Documentation à propos de cette page : https://fshschool.org/docs/sushi/configuration/
+
+id: aphp.fhir.fr.atelier # the last part of id and canonical must be the same
+canonical: https://aphp.fr/ig/fhir/atelier # the last part of canonical and id must be the same
+name: ForgeFIG
+title: Guide d'implémentation pour l'atelier #1
+publisher:
+  name: AP-HP
+  url: https://aphp.fr
+jurisdiction: urn:iso:std:iso:3166#FRA
+status: draft
+version: 0.1.0 # shall conform to Semantic Versioning https://fr.wiktionary.org/wiki/SemVer
+fhirVersion: 4.0.1
+copyrightYear: 2025+
+releaseLabel: ci-build # ci-build: the continuous integration build release (not stable), draft: draft version, qa-preview: frozen snapshot for non-ballot feedback, ballot: frozen snapshot for ballot, trial-use: official release with ‘trial use’ status, release: official release for use, update: official release with ‘trial use’ status - posted as an un-balloted STU update, normative+trial-use: official release with mixture of trial use and normative content
+
+dependencies:
+  hl7.fhir.fr.core: 2.1.0
+
+pages:
+  index.md:
+    title: Accueil
+  data-dictionary.md:
+    title: Dictionnaire des données
+  other.md: 
+    title: Autres
+    glossary.md:
+      title: Glossaire
+    changelog.md:
+      title: Notes de version
+    help.md:
+      title: Aide
+    downloads.md:
+      title: Téléchargements et usages
+  
+
+menu:
+  Accueil: index.html
+  Dictionnaire des données: data-dictionary.html
+  Guide:
+    Gestion des données: new-tab https://interop.aphp.fr/ig/fhir/core/data-management.html
+    Conformité: new-tab https://interop.aphp.fr/ig/fhir/core/conformance.html
+    Bonnes pratiques: new-tab https://interop.aphp.fr/ig/fhir/core/best-practice.html
+    Processus de standardisation des données: new-tab https://interop.aphp.fr/ig/fhir/core/standardization-process.html
+    Processus d'établissement des contrats d'interopérabilité: new-tab https://interop.aphp.fr/ig/fhir/core/interoperability-process.html
+  Ressources FHIR: artifacts.html
+  Autres:
+    Notes de version: changelog.html
+    Aide: help.html
+    Glossaire: glossary.html
+    Téléchargements et usage: downloads.html
+    "Spécifications FHIR": new-tab {{site.data.fhir.path}}index.html
+    "Site des guides d'implémentation FHIR de l'AP-HP": new-tab https://interop.aphp.fr
+
+    
+parameters:  # see https://build.fhir.org/ig/FHIR/fhir-tools-ig/CodeSystem-ig-parameters.html
+  excludettl: true
+  excludexml: true
+  shownav: true
+  pin-canonicals: pin-all # Avoid raising many warnings when there are no version for URLs. "pin-multiples": pinning the canonical reference will only happen if there is multiple versions found in the package dependencies. "pin-all": any unversioned canonical references that can be resolved through the package dependencies will have |(version) appended to the canonical, where (version) is the latest available within the package dependencies
+  path-expansion-params: '../../input/data/expansion-params.json' # for using French SNOMED CT Extension
+
+# The instanceOptions property is used to configure certain aspects of how SUSHI processes instances.
+instanceOptions:
+  setMetaProfile: always # Determines for which types of Instances SUSHI will automatically set meta.profile if InstanceOf references a profile
+  setId: always # Determines for which types of Instances SUSHI will automatically set id if InstanceOf references a profile
+
+#  logging:
+#    - tx #tx: Messages describing the use of the terminology server (for debugging)
+#    - html #html: Log when validating a html page (troubleshooting only - leave off)
+#    - generate #generate: Log when producing an individual resource (troubleshooting only - leave off)
+#    - init #init: Messages describing the start up process (for debugging)
+#    - progress #progress: Overall progress messages

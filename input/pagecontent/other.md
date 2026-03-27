@@ -1,0 +1,4 @@
+- [Notes de version](changelog.html)
+- [Aide](help.html)
+- [Glossaire](glossary.html)
+- [Télécharger les spécifications](downloads.html)
