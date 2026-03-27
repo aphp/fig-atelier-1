@@ -1,0 +1,32 @@
+{
+  "resourceType" : "mdm",
+  "msh" : {
+    "msh1" : "|",
+    "msh2" : "^~\\&",
+    "msh3" : "Z0101",
+    "msh4" : "026",
+    "msh5" : "ORBIS",
+    "msh6" : "APHP",
+    "msh7" : "20260327223612",
+    "msh9" : "MDM^T02",
+    "msh10" : "9903fe73-4393-4cb6-be58-3e201a9163b9",
+    "msh11" : "P",
+    "msh12" : "2.5",
+    "msh18" : "8859/15"
+  },
+  "pid" : {
+    "pid3" : [{
+      "cx1" : "8034567890",
+      "cx4" : "APHP",
+      "cx5" : "PN"
+    }],
+    "pid5" : [{
+      "xpn1" : "VINCENT",
+      "xpn2" : "Michel",
+      "xpn3" : "René"
+    }],
+    "pid7" : "20001020",
+    "pid8" : "M",
+    "pid18" : "NDA"
+  }
+}

@@ -1,0 +1,134 @@
+{
+    "resourceType": "DocumentReference",
+    "id": "ajout",
+    "contained": [
+        {
+            "resourceType": "PractitionerRole",
+            "id": "aph-example",
+            "practitioner": {
+                "reference": "#with-aph-example"
+            }
+        },
+        {
+            "resourceType": "Patient",
+            "id": "document-1-patient",
+            "identifier": [
+                {
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                                "code": "PI"
+                            }
+                        ]
+                    },
+                    "system": "https://interop.aphp.fr/info/Patient/ipp",
+                    "value": "8034567890"
+                }
+            ],
+            "name": [
+                {
+                    "extension": [
+                        {
+                            "url": "https://hl7.fr/ig/fhir/core/StructureDefinition/fr-core-patient-birth-list-given-name",
+                            "valueString": "Michel René"
+                        }
+                    ],
+                    "use": "official",
+                    "family": "VINCENT",
+                    "given": [
+                        "Michel"
+                    ]
+                }
+            ],
+            "gender": "male",
+            "birthDate": "2000-10-20"
+        },
+        {
+            "resourceType": "Practitioner",
+            "id": "with-aph-example",
+            "identifier": [
+                {
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0203",
+                                "code": "EI"
+                            }
+                        ]
+                    },
+                    "system": "https://interop.aphp.fr/info/Practitioner/aph",
+                    "value": "3213039"
+                }
+            ],
+            "name": [
+                {
+                    "family": "GRIFFON",
+                    "given": [
+                        "Nicolas"
+                    ]
+                }
+            ],
+            "gender": "male",
+            "birthDate": "1980-01-01"
+        }
+    ],
+    "masterIdentifier": {
+        "system": "https://interop.aphp.fr/info/DocumentReference/Z0101",
+        "value": "1"
+    },
+    "status": "current",
+    "type": {
+        "coding": [
+            {
+                "system": "http://loinc.org",
+                "code": "85208-7",
+                "display": "CR de télémédecine"
+            }
+        ]
+    },
+    "subject": {
+        "reference": "#document-1-patient"
+    },
+    "date": "2025-01-28T14:43:10+01:00",
+    "author": [
+        {
+            "type": "Organization",
+            "identifier": {
+                "type": {
+                    "coding": [
+                        {
+                            "system": "https://hl7.fr/ig/fhir/core/CodeSystem/fr-core-cs-v2-0203",
+                            "code": "INTRN"
+                        }
+                    ]
+                },
+                "system": "https://interop.aphp.fr/info/Organization/Sirius",
+                "value": "026X033"
+            },
+            "display": "numéro au hasard, improbable qu'il existe vraiment"
+        }
+    ],
+    "authenticator": {
+        "reference": "#aph-example"
+    },
+    "custodian": {
+        "identifier": {
+            "system": "https://interop.aphp.fr/info/Device/hopex",
+            "value": "Z0101"
+        },
+        "display": "éditeur de gynab"
+    },
+    "content": [
+        {
+            "attachment": {
+                "contentType": "application/pdf",
+                "language": "fr-FR",
+                "data": "JVBERi0xLjQKJXBhcnR4cmVmCjEzMTg1CiUlRU9GCg==",
+                "hash": "sdmytl8EeWu33+ksMenAOhACd4U=",
+                "title": "CR",
+                "creation": "2025-01-28T14:53:10+01:00"
+            }
+        }
+    ]
+}

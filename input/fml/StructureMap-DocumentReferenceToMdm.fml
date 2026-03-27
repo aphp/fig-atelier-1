@@ -1,0 +1,116 @@
+/// url = "https://interop.aphp.fr/ig/fhir/atelier/StructureMap/DR2Mdm"
+/// name = 'DR2Mdm'
+/// title = 'Transformation du payload du service document en message MDM'
+/// description = "Cette map permet de constuire un message MDM à partir d'une requête au service de d'ajout de document (POST)"
+/// status = 'active'
+
+uses "http://hl7.org/fhir/StructureDefinition/DocumentReference" alias DocumentReference as source
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/mdm" alias Mdm as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/msh" alias Msh as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
+
+group DR2Mdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
+  srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
+
+  srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
+}
+
+group toMsh(source srcDocRef, target tgtMsh : Msh) {
+  // --- Champs fixes MSH ---
+
+  srcDocRef -> tgtMsh.msh1 = '|' "setFieldSep";
+
+  srcDocRef -> tgtMsh.msh2 = ('^~\\&') "setEncoding";
+
+  srcDocRef -> tgtMsh.msh5 = 'ORBIS' "setReceivingApp";
+
+  srcDocRef -> tgtMsh.msh6 = 'APHP' "setReceivingFacility";
+
+  // msh7 : date/heure au format HL7 v2 (YYYYMMDDHHmmss)
+  // On utilise une expression unique sur now() pour éviter plusieurs appels retournant des timestamps différents.
+  // now() retourne un format ISO 8601 (ex: 2024-01-15T14:30:00+01:00) ;
+  // on supprime les séparateurs '-', 'T', ':' puis on tronque à 14 caractères.
+  srcDocRef -> tgtMsh.msh7 = (now().toString().replace('-','').replace('T','').replace(':','').substring(0,14)) "setDateTime";
+
+  srcDocRef -> tgtMsh.msh9 = 'MDM^T02' "setMessageType";
+
+  srcDocRef -> tgtMsh.msh10 = uuid() "setMsgControlId";
+
+  srcDocRef -> tgtMsh.msh11 = 'P' "setProcessingId";
+
+  srcDocRef -> tgtMsh.msh12 = '2.5' "setVersion";
+
+  srcDocRef -> tgtMsh.msh18 = '8859/15' "setCharSet";
+
+  // --- Champs variables MSH ---
+
+  // msh3 : application d'envoi (identifiant Hopex du custodian)
+  srcDocRef.custodian as srcCustodian then {
+    srcCustodian.identifier as srcCustIdentifier
+      where system = 'https://interop.aphp.fr/info/Device/hopex' then {
+        srcCustIdentifier.value as srcCustIdentVal -> tgtMsh.msh3 = srcCustIdentVal "setMsh3";
+    } "navCustIdentifier";
+  } "navCustodian";
+
+  // msh4 : code hôpital (3 premiers caractères de l'identifiant Sirius)
+  // Précondition : la valeur doit faire au moins 3 caractères (garde explicite).
+  srcDocRef.author as srcServiceRespMed
+    where (identifier.system = 'https://interop.aphp.fr/info/Organization/Sirius') then {
+      srcServiceRespMed.identifier as srcServiceRespMedId then {
+        srcServiceRespMedId.value as srcServiceRespMedIdValue
+          where ($this.length() >= 3)
+          -> tgtMsh.msh4 = (%srcServiceRespMedIdValue.substring(0,3)) "setMsh4";
+      } "navUnitIdentifier";
+  } "navUnit";
+}
+
+group toPid(source srcDocRef, target tgtPid: Pid) {
+  // Précondition : subject.reference doit pointer vers une ressource Patient contained (#id).
+  // Si la référence est externe, aucun segment PID ne sera généré (échec silencieux documenté).
+  srcDocRef.subject as srcSubject then {
+    srcSubject.reference as srcSubjectReference then {
+      srcDocRef.contained : Patient as srcDocSubj
+        where ('#' + id = %srcSubjectReference) then {
+
+        // pid3 : IPP patient
+        srcDocSubj.identifier as srcDocSubjIdentifier
+          where system = 'https://interop.aphp.fr/info/Patient/ipp'
+          -> tgtPid.pid3 as tgtPid3,
+             tgtPid3.cx5 = 'PN',
+             tgtPid3.cx4 = 'APHP',
+             tgtPid3.cx1 = (%srcDocSubjIdentifier.value) "setPid3";
+
+        // pid5 : nom officiel
+        srcDocSubj.name as srcSubjName where use = 'official' -> tgtPid.pid5 as tgtPid5 then {
+          srcSubjName.family as srcSubjFamilyName -> tgtPid5.xpn1 = srcSubjFamilyName "setFamilyName";
+
+          srcSubjName.given as srcSubjGivenName -> tgtPid5.xpn2 = srcSubjGivenName then {
+            // xpn3 : prénoms secondaires extraits de l'extension fr-core birth-list-given-name.
+            // Hypothèse : la valeur de l'extension contient le prénom usuel suivi d'un espace
+            // puis des prénoms secondaires (ex: "Jean Pierre Marie").
+            // On extrait la partie après le prénom usuel (longueur + 1 pour l'espace).
+            // Si le format de l'extension change, cette logique doit être revisitée.
+            srcSubjName.extension as srcSubjectGivenNamesExt
+              where url = 'https://hl7.fr/ig/fhir/core/StructureDefinition/fr-core-patient-birth-list-given-name' then {
+                srcSubjectGivenNamesExt.value : string as srcSubjectGivenNamesValue
+                  -> tgtPid5.xpn3 = (%srcSubjectGivenNamesValue.toString().substring(%srcSubjGivenName.length() + 1)) "setGivenNames";
+            } "navGivenNamesExt";
+          } "setGivenName";
+        } "navName";
+
+        // pid7 : date de naissance au format HL7 v2 (YYYYMMDD)
+        // On supprime les tirets du format ISO 8601 (YYYY-MM-DD -> YYYYMMDD).
+        srcDocSubj.birthDate as srcSubjBirthDate
+          -> tgtPid.pid7 = (%srcSubjBirthDate.toString().replace('-','')) "setBirthDate";
+
+        // pid8 : sexe (via ConceptMap FHIR -> table HL7 0001)
+        srcDocSubj.gender as srcSubjGender
+          -> tgtPid.pid8 = translate(srcSubjGender, "https://interop.aphp.fr/ig/fhir/atelier/ConceptMap/patient-gender-to-aphp-table-0001", 'code') "setGender";
+
+        // pid18 : NDA (valeur fixe provisoire — TODO: voir pv1-19)
+        srcDocSubj -> tgtPid.pid18 = 'NDA' "setPid18";
+
+      } "navContainedSubject";
+    } "navSubjectReference";
+  } "navSubject";
+}

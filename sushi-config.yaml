@@ -1,7 +1,7 @@
 # Documentation à propos de cette page : https://fshschool.org/docs/sushi/configuration/
 
 id: aphp.fhir.fr.atelier # the last part of id and canonical must be the same
-canonical: https://aphp.fr/ig/fhir/atelier # the last part of canonical and id must be the same
+canonical: https://interop.aphp.fr/ig/fhir/atelier # the last part of canonical and id must be the same
 name: ForgeFIG
 title: Guide d'implémentation pour l'atelier #1
 publisher:
@@ -15,6 +15,7 @@ copyrightYear: 2025+
 releaseLabel: ci-build # ci-build: the continuous integration build release (not stable), draft: draft version, qa-preview: frozen snapshot for non-ballot feedback, ballot: frozen snapshot for ballot, trial-use: official release with ‘trial use’ status, release: official release for use, update: official release with ‘trial use’ status - posted as an un-balloted STU update, normative+trial-use: official release with mixture of trial use and normative content
 
 dependencies:
+  hl7.fhir.uv.crmi: 1.0.0
   hl7.fhir.fr.core: 2.1.0
 
 pages:
@@ -59,6 +60,11 @@ parameters:  # see https://build.fhir.org/ig/FHIR/fhir-tools-ig/CodeSystem-ig-pa
   shownav: true
   pin-canonicals: pin-all # Avoid raising many warnings when there are no version for URLs. "pin-multiples": pinning the canonical reference will only happen if there is multiple versions found in the package dependencies. "pin-all": any unversioned canonical references that can be resolved through the package dependencies will have |(version) appended to the canonical, where (version) is the latest available within the package dependencies
   path-expansion-params: '../../input/data/expansion-params.json' # for using French SNOMED CT Extension
+  path-resource:
+    - input/fml
+    - input/source
+    - input/target
+  
 
 # The instanceOptions property is used to configure certain aspects of how SUSHI processes instances.
 instanceOptions:
