@@ -77,3 +77,9 @@ instanceOptions:
 #    - generate #generate: Log when producing an individual resource (troubleshooting only - leave off)
 #    - init #init: Messages describing the start up process (for debugging)
 #    - progress #progress: Overall progress messages
+
+resources:
+  DocumentReference/ajout:
+    name: DocumentReference à ajouter
+    description: Exemple de ressource FHIR DocumentReference à ajouter au DPI
+    exampleBoolean: true

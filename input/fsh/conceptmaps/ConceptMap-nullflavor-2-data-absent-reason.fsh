@@ -1,6 +1,6 @@
 Instance: hl7-nullflavor-2-data-absent-reason
 InstanceOf: ConceptMap
-Title: "Mapping from HL7 v3 NullFlavor to FHIR Data Absent Reaso"
+Title: "Mapping from HL7 v3 NullFlavor to FHIR Data Absent Reason"
 Description: "Extended ConceptMap between HL7 v3 NullFlavor codes and FHIR Data Absent Reason codes."
 Usage: #definition
 

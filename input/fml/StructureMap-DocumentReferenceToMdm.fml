@@ -1,7 +1,7 @@
-/// url = "https://interop.aphp.fr/ig/fhir/atelier/StructureMap/DR2Mdm"
-/// name = 'DR2Mdm'
-/// title = 'Transformation du payload du service document en message MDM'
-/// description = "Cette map permet de constuire un message MDM à partir d'une requête au service de d'ajout de document (POST)"
+/// url = 'https://interop.aphp.fr/ig/fhir/atelier/StructureMap/DocumentReferenceToMdm'
+/// name = 'DocumentReferenceToMdm'
+/// title = "Transformation FHIR DocumentReference en message HL7v2 MDM"
+/// description = "Transformation FHIR DocumentReference en message HL7v2 MDM (description)"
 /// status = 'active'
 
 uses "http://hl7.org/fhir/StructureDefinition/DocumentReference" alias DocumentReference as source
@@ -9,7 +9,7 @@ uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/mdm" alias Mdm
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/msh" alias Msh as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
 
-group DR2Mdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
+group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
 
   srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
