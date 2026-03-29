@@ -12,6 +12,7 @@ uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pv1" alias Pv1 as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/orc" alias Orc as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/obr" alias Obr as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/txa" alias Txa as target
 
 group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
@@ -20,6 +21,7 @@ group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm
   srcDocRef -> tgtMdm.pv1 as tgtPv1 then toPv1(srcDocRef, tgtPv1) "toPv1";
   srcDocRef -> tgtMdm.orc as tgtOrc then toOrc(srcDocRef, tgtOrc) "toOrc";
   srcDocRef -> tgtMdm.obr as tgtObr then toObr(srcDocRef, tgtObr) "toObr";
+  srcDocRef -> tgtMdm.txa as tgtTxa then toTxa(srcDocRef, tgtTxa) "toTxa";
 }
 
 group toMsh(source srcDocRef, target tgtMsh : Msh) {
@@ -197,4 +199,79 @@ group toObr(source srcDocRef, target tgtObr : Obr) {
 
   // obr25 : result status, fixé à F (Final) pour un message T02
   srcDocRef -> tgtObr.obr25 = 'F' "setResultStatus";
+}
+
+group toTxa(source srcDocRef, target tgtTxa : Txa) {
+  // txa1 : set ID, fixé à 1
+  srcDocRef -> tgtTxa.txa1 = '1' "setId";
+
+  // txa2 : type de document (via ConceptMap LOINC -> type Mediweb)
+  srcDocRef.type as srcDocTypes then {
+    srcDocTypes.coding as srcDocType
+      where (system = 'http://loinc.org')
+      -> tgtTxa.txa2 = translate(srcDocType, "https://interop.aphp.fr/ig/fhir/atelier/ConceptMap/xds-type-code-to-mediweb-document-type", 'code') "setDocType";
+  } "navType";
+
+  // txa3 : document content presentation, fixé à AP
+  srcDocRef -> tgtTxa.txa3 = 'AP' "setDocContentPresentation";
+
+  // txa6 : date de création au format HL7 v2 (YYYYMMDDHHmmss)
+  srcDocRef.date as srcDate
+    -> tgtTxa.txa6 = (%srcDate.toString().replace('-','').replace('T','').replace(':','').substring(0,14)) "setDate";
+
+  // txa12 : unique document number (identifiant Hopex du custodian + identifiant du document)
+  srcDocRef.masterIdentifier as srcDocMI then {
+    srcDocRef.custodian as srcCustodian then {
+      srcCustodian.identifier as srcCustIdentifier
+        where system = 'https://interop.aphp.fr/info/Device/hopex' then {
+          srcCustIdentifier.value as srcCustIdentVal
+            -> tgtTxa.txa12 = (%srcCustIdentVal + '_' + %srcDocMI.value) "setUniqueDocNumber";
+      } "navCustIdentifier";
+    } "navCustodian";
+  } "navMI";
+
+  // txa17 : document completion status, fixé à AU (Authenticated)
+  srcDocRef -> tgtTxa.txa17 = 'AU' "setDocCompletionStatus";
+
+  // txa22 : authentication person (PPNtype)
+  // Valeur par défaut si aucun authenticator contained n'est résolu.
+  srcDocRef -> tgtTxa.txa22 as tgtTxa22 then {
+    srcDocRef -> tgtTxa22.ppn1 = '0000000' "setDefaultAuthor";
+
+    srcDocRef.authenticator as srcAuthenticator then {
+      srcAuthenticator.reference as srcAuthenticatorRef then {
+        srcDocRef.contained : PractitionerRole as srcPractRole
+          where ('#' + id = %srcAuthenticatorRef) then {
+            srcPractRole.practitioner as srcPractRef then {
+              srcPractRef.reference as srcPractReference then {
+                srcDocRef.contained : Practitioner as srcPract
+                  where ('#' + id = %srcPractReference) then {
+
+                  srcPract.name first as srcPractName then {
+                    srcPractName.family as srcFamilyName -> tgtTxa22.ppn2 = srcFamilyName "setPractFamilyName";
+                    srcPractName.given first as srcGivenName -> tgtTxa22.ppn3 = srcGivenName "setPractGivenName";
+                  } "navPractName";
+
+                  srcPract.identifier as srcPractIdentifier
+                    where system = 'https://interop.aphp.fr/info/Practitioner/aph' then {
+                      srcPractIdentifier.value as srcPractIdentifierValue
+                        -> tgtTxa22.ppn1 = srcPractIdentifierValue,
+                           tgtTxa22.ppn9 = 'APHP' "setPractIdentifier";
+                  } "navPractIdentifier";
+
+                } "navContainedPractitioner";
+              } "navPractitionerRef";
+            } "navPract";
+        } "navContainedPractRole";
+      } "navAuthenticatorRef";
+    } "navAuthenticator";
+  } "navTxa22Identity";
+
+  // txa22.ppn15 : timestamp de l'authentification au format HL7 v2 (YYYYMMDDHHmmss)
+  srcDocRef.content as srcContent then {
+    srcContent.attachment as srcAttachment -> tgtTxa.txa22 as tgtTxa22 then {
+      srcAttachment.creation as srcDate
+        -> tgtTxa22.ppn15 = (%srcDate.toString().replace('-','').replace('T','').replace(':','').substring(0,14)) "setTimestamp";
+    } "navTimestamp";
+  } "navContent";
 }
