@@ -11,6 +11,7 @@ uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/evn" alias Evn
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pv1" alias Pv1 as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/orc" alias Orc as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/obr" alias Obr as target
 
 group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
@@ -18,6 +19,7 @@ group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm
   srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
   srcDocRef -> tgtMdm.pv1 as tgtPv1 then toPv1(srcDocRef, tgtPv1) "toPv1";
   srcDocRef -> tgtMdm.orc as tgtOrc then toOrc(srcDocRef, tgtOrc) "toOrc";
+  srcDocRef -> tgtMdm.obr as tgtObr then toObr(srcDocRef, tgtObr) "toObr";
 }
 
 group toMsh(source srcDocRef, target tgtMsh : Msh) {
@@ -176,4 +178,23 @@ group toOrc(source srcDocRef, target tgtOrc : Orc) {
              tgtOrc13.pl11 = 'SIRIUS' "setHosp";
       } "navIdentifier";
   } "navUnit";
+}
+
+group toObr(source srcDocRef, target tgtObr : Obr) {
+  // obr1 : set ID, fixé à 1
+  srcDocRef -> tgtObr.obr1 = '1' "setId";
+
+  // obr2 : placer order number (identifiant Hopex du custodian + identifiant du document)
+  srcDocRef.masterIdentifier as srcDocMI then {
+    srcDocRef.custodian as srcCustodian then {
+      srcCustodian.identifier as srcCustIdentifier
+        where system = 'https://interop.aphp.fr/info/Device/hopex' then {
+          srcCustIdentifier.value as srcCustIdentVal
+            -> tgtObr.obr2 = (%srcCustIdentVal + '_' + %srcDocMI.value) "setPlacerOrderNumber";
+      } "navCustIdentifier";
+    } "navCustodian";
+  } "navMI";
+
+  // obr25 : result status, fixé à F (Final) pour un message T02
+  srcDocRef -> tgtObr.obr25 = 'F' "setResultStatus";
 }
