@@ -7,11 +7,13 @@
 uses "http://hl7.org/fhir/StructureDefinition/DocumentReference" alias DocumentReference as source
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/mdm" alias Mdm as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/msh" alias Msh as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/evn" alias Evn as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pv1" alias Pv1 as target
 
 group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
+  srcDocRef -> tgtMdm.evn as tgtEvn then toEvn(srcDocRef, tgtEvn) "toEvn";
   srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
   srcDocRef -> tgtMdm.pv1 as tgtPv1 then toPv1(srcDocRef, tgtPv1) "toPv1";
 }
@@ -63,6 +65,16 @@ group toMsh(source srcDocRef, target tgtMsh : Msh) {
           -> tgtMsh.msh4 = (%srcServiceRespMedIdValue.substring(0,3)) "setMsh4";
       } "navUnitIdentifier";
   } "navUnit";
+}
+
+group toEvn(source srcDocRef, target tgtEvn : Evn) {
+  // evn2 : date de validation du document au format HL7 v2 (YYYYMMDDHHmmss)
+  srcDocRef.content as srcContent then {
+    srcContent.attachment as srcAttachment then {
+      srcAttachment.creation as srcDate
+        -> tgtEvn.evn2 = (%srcDate.toString().replace('-','').replace('T','').replace(':','').substring(0,14)) "setDate";
+    } "navAttachment";
+  } "navContent";
 }
 
 group toPid(source srcDocRef, target tgtPid: Pid) {
