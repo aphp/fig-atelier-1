@@ -13,6 +13,7 @@ uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pv1" alias Pv1
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/orc" alias Orc as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/obr" alias Obr as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/txa" alias Txa as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/obx" alias Obx as target
 
 group documentReferenceToT02(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
@@ -22,6 +23,7 @@ group documentReferenceToT02(source srcDocRef : DocumentReference, target tgtMdm
   srcDocRef -> tgtMdm.orc as tgtOrc then toOrc(srcDocRef, tgtOrc) "toOrc";
   srcDocRef -> tgtMdm.obr as tgtObr then toObr(srcDocRef, tgtObr) "toObr";
   srcDocRef -> tgtMdm.txa as tgtTxa then toTxa(srcDocRef, tgtTxa) "toTxa";
+  srcDocRef -> tgtMdm.obx as tgtObx then toObx(srcDocRef, tgtObx) "toObx";
 }
 
 group toMsh(source srcDocRef, target tgtMsh : Msh) {
@@ -274,4 +276,45 @@ group toTxa(source srcDocRef, target tgtTxa : Txa) {
         -> tgtTxa22.ppn15 = (%srcDate.toString().replace('-','').replace('T','').replace(':','').substring(0,14)) "setTimestamp";
     } "navTimestamp";
   } "navContent";
+}
+
+group toObx(source srcDocRef, target tgtObx : Obx) {
+  // obx1 : set ID, fixé à 1
+  srcDocRef -> tgtObx.obx1 = '1' "setId";
+
+  // obx2 : value type, fixé à RP (Reference Pointer)
+  srcDocRef -> tgtObx.obx2 = 'RP' "setValueType";
+
+  // obx5 : observation value — lien vers le document physique
+  // Nom de fichier construit : nomDeFluxEai.<UF3>.<YYYYMMDD>-<HHmmss>.<Hopex>_<masterID>.01.pdf
+  // Précondition : l'identifiant Sirius doit comporter au moins 3 caractères.
+  srcDocRef.masterIdentifier as srcMI then {
+    srcDocRef.custodian as srcCustodian then {
+      srcCustodian.identifier as srcCustIdentifier
+        where system = 'https://interop.aphp.fr/info/Device/hopex' then {
+          srcDocRef.content as srcContent then {
+            srcContent.attachment as srcAttachment then {
+              srcDocRef.author as srcRespMed
+                where (identifier.system = 'https://interop.aphp.fr/info/Organization/Sirius') then {
+                  srcRespMed.identifier as srcRespMedId -> tgtObx.obx5 as tgtObx5 then {
+                    srcAttachment.title as srcDocTitle
+                      -> tgtObx5.rp2 = srcDocTitle "setDocTitle";
+                    srcRespMedId.value as srcUF then {
+                      srcAttachment.creation as srcDate
+                        -> tgtObx5.rp1 = ('nomDeFluxEai'
+                            + '.' + %srcUF.substring(0,3)
+                            + '.' + %srcDate.toString().replace('-','').replace('T','-').replace(':','').substring(0,15)
+                            + '.' + %srcCustIdentifier.value + '_' + %srcMI.value
+                            + '.01.pdf') "setDocName";
+                    } "navUf";
+                  } "navObx5";
+              } "navAuthor";
+            } "navAttachment";
+          } "navContent";
+      } "navCustIdentifier";
+    } "navCustodian";
+  } "navMI";
+
+  // obx11 : observation result status, fixé à F (Final)
+  srcDocRef -> tgtObx.obx11 = 'F' "setResultStatus";
 }
