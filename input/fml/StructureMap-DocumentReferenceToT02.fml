@@ -10,12 +10,14 @@ uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/msh" alias Msh
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/evn" alias Evn as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pv1" alias Pv1 as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/orc" alias Orc as target
 
 group documentReferenceToT02(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
   srcDocRef -> tgtMdm.evn as tgtEvn then toEvn(srcDocRef, tgtEvn) "toEvn";
   srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
   srcDocRef -> tgtMdm.pv1 as tgtPv1 then toPv1(srcDocRef, tgtPv1) "toPv1";
+  srcDocRef -> tgtMdm.orc as tgtOrc then toOrc(srcDocRef, tgtOrc) "toOrc";
 }
 
 group toMsh(source srcDocRef, target tgtMsh : Msh) {
@@ -147,4 +149,31 @@ group toPv1(source srcDocRef, target tgtPv1 : Pv1) {
   // La recherche d'un NDA en croisant l'IPP et l'unité garantit son existence ; lever une erreur si absent.
   // TODO: formaliser la représentation FHIR du NDA de consultation (List, Account, EpisodeOfCare...).
   srcDocRef -> tgtPv1.pv119 = 'NDA' "setPv1Nda";
+}
+
+group toOrc(source srcDocRef, target tgtOrc : Orc) {
+  // orc1 : order control, fixé à 'RE'
+  srcDocRef -> tgtOrc.orc1 = 'RE' "setOrderControl";
+
+  // orc2 : placer order number (identifiant Hopex du custodian + identifiant du document)
+  srcDocRef.masterIdentifier as srcDocMI then {
+    srcDocRef.custodian as srcCustodian then {
+      srcCustodian.identifier as srcCustIdentifier
+        where system = 'https://interop.aphp.fr/info/Device/hopex' then {
+          srcCustIdentifier.value as srcCustIdentVal
+            -> tgtOrc.orc2 = (%srcCustIdentVal + '_' + %srcDocMI.value) "setPlacerOrderNumber";
+      } "navCustIdentifier";
+    } "navCustodian";
+  } "navMI";
+
+  // orc13 : enterer's location (code hôpital sur 3 caractères + référentiel Sirius)
+  // Précondition : utiliser le code hôpital du fichier structure, non le code UF.
+  srcDocRef.author as srcServiceRespMed
+    where (identifier.system = 'https://interop.aphp.fr/info/Organization/Sirius') then {
+      srcServiceRespMed.identifier as srcServiceRespMedId -> tgtOrc.orc13 as tgtOrc13 then {
+        srcServiceRespMedId.value as srcServiceRespMedIdValue
+          -> tgtOrc13.pl4 = (%srcServiceRespMedIdValue.substring(0,3)),
+             tgtOrc13.pl11 = 'SIRIUS' "setHosp";
+      } "navIdentifier";
+  } "navUnit";
 }
