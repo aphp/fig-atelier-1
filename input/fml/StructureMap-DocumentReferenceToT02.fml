@@ -8,11 +8,12 @@ uses "http://hl7.org/fhir/StructureDefinition/DocumentReference" alias DocumentR
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/mdm" alias Mdm as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/msh" alias Msh as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
+uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pv1" alias Pv1 as target
 
 group documentReferenceToT02(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
-
   srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
+  srcDocRef -> tgtMdm.pv1 as tgtPv1 then toPv1(srcDocRef, tgtPv1) "toPv1";
 }
 
 group toMsh(source srcDocRef, target tgtMsh : Msh) {
@@ -113,4 +114,25 @@ group toPid(source srcDocRef, target tgtPid: Pid) {
       } "navContainedSubject";
     } "navSubjectReference";
   } "navSubject";
+}
+
+group toPv1(source srcDocRef, target tgtPv1 : Pv1) {
+  // pv12 : patient class, fixé à O (= consultation externe)
+  srcDocRef -> tgtPv1.pv12 = 'O' "setPatientClass";
+
+  // pv13 : lieu de visite (code UF Sirius)
+  srcDocRef.author as srcServiceRespMed
+    where (identifier.system = 'https://interop.aphp.fr/info/Organization/Sirius') then {
+      srcServiceRespMed.identifier as srcServiceRespMedId -> tgtPv1.pv13 as tgtPv13 then {
+        srcServiceRespMedId.value as srcServiceRespMedIdValue
+          -> tgtPv13.pl1 = srcServiceRespMedIdValue,
+             tgtPv13.pl11 = 'SIRIUS' "setUf"; // pl11 optionnel ; séparateurs requis jusqu'à pl4 minimum
+      } "navIdentifier";
+  } "navUnit";
+
+  // pv119 : NDA
+  // Le NDA n'est pas obligatoire, mais il doit y en avoir un.
+  // La recherche d'un NDA en croisant l'IPP et l'unité garantit son existence ; lever une erreur si absent.
+  // TODO: formaliser la représentation FHIR du NDA de consultation (List, Account, EpisodeOfCare...).
+  srcDocRef -> tgtPv1.pv119 = 'NDA' "setPv1Nda";
 }
