@@ -23,6 +23,8 @@ pages:
     title: Accueil
   data-dictionary.md:
     title: Dictionnaire des données
+  message-mdm.md:
+    title: Transformation FHIR DocumentReference to HL7v2 MDM
   other.md: 
     title: Autres
     glossary.md:
