@@ -1,7 +1,7 @@
-/// url = 'https://interop.aphp.fr/ig/fhir/atelier/StructureMap/DocumentReferenceToMdm'
-/// name = 'DocumentReferenceToMdm'
-/// title = "Transformation FHIR DocumentReference en message HL7v2 MDM"
-/// description = "Transformation FHIR DocumentReference en message HL7v2 MDM (description)"
+/// url = 'https://interop.aphp.fr/ig/fhir/atelier/StructureMap/DocumentReferenceToT02'
+/// name = 'DocumentReferenceToT02'
+/// title = "Transformation FHIR DocumentReference en message HL7v2 MDM^T02"
+/// description = "Transformation FHIR DocumentReference en message HL7v2 MDM^T02 (description)"
 /// status = 'active'
 
 uses "http://hl7.org/fhir/StructureDefinition/DocumentReference" alias DocumentReference as source
@@ -9,7 +9,7 @@ uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/mdm" alias Mdm
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/msh" alias Msh as target
 uses "https://interop.aphp.fr/ig/fhir/atelier/StructureDefinition/pid" alias Pid as target
 
-group documentReferenceToMdm(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
+group documentReferenceToT02(source srcDocRef : DocumentReference, target tgtMdm : Mdm) {
   srcDocRef -> tgtMdm.msh as tgtMsh then toMsh(srcDocRef, tgtMsh) "toMsh";
 
   srcDocRef -> tgtMdm.pid as tgtPid then toPid(srcDocRef, tgtPid) "toPid";
@@ -22,7 +22,7 @@ group toMsh(source srcDocRef, target tgtMsh : Msh) {
 
   srcDocRef -> tgtMsh.msh2 = ('^~\\&') "setEncoding";
 
-  srcDocRef -> tgtMsh.msh5 = 'ORBIS' "setReceivingApp";
+  srcDocRef -> tgtMsh.msh5 = 'DPI' "setReceivingApp";
 
   srcDocRef -> tgtMsh.msh6 = 'APHP' "setReceivingFacility";
 

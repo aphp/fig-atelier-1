@@ -16,6 +16,8 @@ Description:  """Modèle logique pour un message MDM"""
 
 Instance: mdm-t02
 InstanceOf: Mdm
+Title: "Exemple de message MDM^T02"
+Description: "Exemple de message MDM^T02 (ajout d'un document)"
 Usage: #example
 
 * msh
